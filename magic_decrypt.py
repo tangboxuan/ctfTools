@@ -26,7 +26,12 @@ with open(inFile, 'rb') as f:
                 break
 
 key = input("Enter key chosen:").encode("utf-8")
-outFile = input("Enter output filename: ")
+outFile = input("Enter output filename (optional): ")
+if not outFile:
+    outFile = "out." + fileType
+elif "." + fileType not in outFile:
+    outFile = outFile + "." + fileType
+
 source = open(inFile ,'rb').read()
 
 with open(outFile, 'wb') as fout: 
