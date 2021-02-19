@@ -97,7 +97,7 @@ if __name__ == '__main__':
             infoThree.append(x + "-" + y)
             infoThree.append(x + "_" + y)
 
-    for password in infoOne + infoTwo + infoThree:
+    for password in common + infoOne + infoTwo + infoThree:
         try:
             key = pad_key(password)
         except:
