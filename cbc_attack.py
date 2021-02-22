@@ -7,22 +7,31 @@ import string
 
 URL = "" #enter link here
 ciphertext = '' #enter ciphertext here
-paddingScheme = 'PKCS7'
+paddingScheme = 'PKCS7' #choose padding scheme
+
+def getResponse(stringToSend):          #customise how to get response
+    payload = {                         #
+        'data': stringToSend            #
+    }                                   #
+    response = s.post(URL, data=payload)#
+    return response                     #
+
+def checkSuccess(response):                     #customise success metric
+    for line in response.text.split("\n")[-10:]:#
+        if "Successful" in line:                #
+            return 1                            # 1 for success
+    return 0                                    # 0 for failure
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 s = requests.Session()
 originalList = wrap(ciphertext, 32)
 
 def getData(data, i, x):
-    payload = {
-        'data': data
-    }
-    response = s.post(URL, data=payload)
-    for line in response.text.split("\n")[-10:]:
-        if "Successful" in line:
-            value = hex(i^x)
-            print('value:',value)
-            return value[2:]
+    response = getResponse(data)
+    if checkSuccess(response):
+        value = hex(i^x)
+        print('value:',value)
+        return value[2:]
     return 0
 
 def xor(initial, value):
@@ -36,9 +45,8 @@ def xor(initial, value):
 
 def pad(n):
     '''
-    generates padding of 020304...0n
+    generates padding of according to chose scheme
     '''
-    string = ''
     if paddingScheme == 'PKCS7':
         string = n * '0' + str(n+1)
     elif paddingScheme == 'increment':
@@ -49,6 +57,10 @@ def pad(n):
                 if i < 16:
                     string += '0'
                 string += hex(i)[2:]
+    #add encryption scheme here where n = number of bytes known
+    else:
+        print("ADD CUSTOM ENCRYPTION SCHEME UNDER PAD AND GUESS")
+        #string undefined to throw error
     return string
 
 def guess(known):
@@ -67,18 +79,18 @@ def guess(known):
         checkByte = int(attackLength/2)
     elif paddingScheme == 'Decrement':
         checkByte = 1
+    #add encryption scheme here where checkByte = byte expected for padding oracle
 
     if attackLength: 
-        frontStringReset = ''.join(originalList[:-(1+block)])[:-attackLength] # drops number of known characters
-        dropped = originalList[-(2+block)][-attackLength:] # gets dropped characters
-        # print(dropped)
+        frontStringReset = ''.join(originalList[:-(1+block)])[:-attackLength] # drops number of known characters and irrelevant blocks
+        dropped = originalList[-(2+block)][-attackLength:] # gets dropped known characters
         back = xor(dropped, known[:attackLength]) # xors dropped with known
         padding = xor(back, padding) # xor with intended padding
         if len(padding) % 2 != 0: # appends 0 in front if dropped has odd number of chars
             padding = '0' + padding
     else: #if known is empty
         frontStringReset = ''.join(originalList[:-(1+block)])
-    backString = originalList[-(1+block)]
+    backString = originalList[-(1+block)] # block being attacked
 
     success = 0
     for i in range(256):
@@ -94,6 +106,7 @@ def guess(known):
     if success == 0:
         print("ERROR")
         return 0
+    # else success > 1
     print("MORE THAN ONE POSSIBLE VALUE FOUND")
     return 0
 
